@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Vídeos de Memes do Reddit</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <!-- Adiciona Font Awesome para ícones de compartilhamento -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .video-container {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--bs-dark);
+        }
+        .video-thumbnail {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .video-details {
+            padding: 15px;
+        }
+        .share-buttons {
+            margin-top: 10px;
+        }
+        .share-btn {
+            display: inline-block;
+            margin-right: 10px;
+            text-decoration: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .facebook { background-color: #3b5998; }
+        .twitter { background-color: #1da1f2; }
+        .whatsapp { background-color: #25d366; }
+        .telegram { background-color: #0088cc; }
+        .reddit { background-color: #ff4500; }
+        
+        .filter-section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Gerador de Vídeos de Memes do Reddit</h1>
+        
+        <!-- Seção de Filtros e Controles -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Gerar Novo Vídeo</h5>
+                <form action="/run" method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="subreddit" class="form-label">Subreddit</label>
+                        <div class="input-group">
+                            <input type="text" name="subreddit" id="subreddit" class="form-control" 
+                                   placeholder="Digite um ou mais subreddits separados por vírgula" 
+                                   aria-describedby="subredditHelp"
+                                   value="{{ config.subreddits|join(', ') }}">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown" aria-expanded="false">Sugestões</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% if subreddits %}
+                                    <li><span class="dropdown-header fw-bold">Categorias</span></li>
+                                    <li><a class="dropdown-item subreddit-option">@Humor</a></li>
+                                    <li><a class="dropdown-item subreddit-option">@Animais</a></li>
+                                    <li><a class="dropdown-item subreddit-option">@Tecnologia</a></li>
+                                    <li><a class="dropdown-item subreddit-option">@Games</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><span class="dropdown-header fw-bold">Subreddits populares</span></li>
+                                    {% for subreddit in subreddits %}
+                                    <li><a class="dropdown-item subreddit-option" title="{{ subreddit.description }}">{{ subreddit.name }}</a></li>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for subreddit in config.subreddits %}
+                                    <li><a class="dropdown-item subreddit-option">{{ subreddit }}</a></li>
+                                    {% endfor %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item subreddit-option">memes</a></li>
+                                    <li><a class="dropdown-item subreddit-option">dankmemes</a></li>
+                                    <li><a class="dropdown-item subreddit-option">wholesomememes</a></li>
+                                    <li><a class="dropdown-item subreddit-option">ProgrammerHumor</a></li>
+                                    <li><a class="dropdown-item subreddit-option">funny</a></li>
+                                    <li><a class="dropdown-item subreddit-option">me_irl</a></li>
+                                    <li><a class="dropdown-item subreddit-option">cats</a></li>
+                                    <li><a class="dropdown-item subreddit-option">dogs</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div id="subredditHelp" class="form-text">
+                            Digite o nome de um subreddit ou vários separados por vírgula (ex: "memes, cats, funny")
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="limit" class="form-label">Número de Posts</label>
+                        <input type="number" name="limit" id="limit" class="form-control" value="{{ config.posts_limit }}" min="1" max="50">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="feed_type" class="form-label">Tipo de Feed</label>
+                        <select name="feed_type" id="feed_type" class="form-select">
+                            {% for feed_type in config.feed_types %}
+                            <option value="{{ feed_type }}">{{ feed_type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="image_duration" class="form-label">Duração por Imagem (segundos)</label>
+                        <input type="number" name="image_duration" id="image_duration" class="form-control" value="{{ config.image_duration }}" min="1" max="10">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Gerar Vídeo</button>
+                        <small class="text-muted ms-2">Os vídeos serão gerados com todas as configurações do arquivo config.json</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Lista de Vídeos -->
+        <h2 class="mb-3">Vídeos Gerados</h2>
+        
+        <div class="row">
+            {% for video in videos %}
+            <div class="col-md-6 col-lg-4">
+                <div class="video-container card">
+                    <video class="video-thumbnail card-img-top" controls>
+                        <source src="/video/{{ video.path }}" type="video/mp4">
+                        Seu navegador não suporta a reprodução de vídeos.
+                    </video>
+                    <div class="video-details card-body">
+                        <h5 class="card-title">r/{{ video.subreddit }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">{{ video.date }}</small><br>
+                            <small class="text-muted">Tamanho: {{ video.size }}</small>
+                            {% if video.feed_type or video.post_count %}
+                            <br>
+                                {% if video.feed_type %}
+                                <small class="text-muted">Feed: {{ video.feed_type }}</small>
+                                {% endif %}
+                                {% if video.post_count %}
+                                <small class="text-muted ms-2">Posts: {{ video.post_count }}</small>
+                                {% endif %}
+                            {% endif %}
+                        </p>
+                        
+                        <!-- Botões de Compartilhamento -->
+                        <div class="share-buttons">
+                            <h6>Compartilhar:</h6>
+                            {% set video_url = request.url_root + 'video/' + video.path %}
+                            {% set title = 'Vídeo de memes do Reddit r/' + video.subreddit %}
+                            
+                            <!-- Facebook -->
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ video_url|urlencode }}" 
+                               target="_blank" class="share-btn facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            
+                            <!-- Twitter -->
+                            <a href="https://twitter.com/intent/tweet?url={{ video_url|urlencode }}&text={{ title|urlencode }}" 
+                               target="_blank" class="share-btn twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            
+                            <!-- WhatsApp -->
+                            <a href="https://api.whatsapp.com/send?text={{ (title + ' ' + video_url)|urlencode }}" 
+                               target="_blank" class="share-btn whatsapp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            
+                            <!-- Telegram -->
+                            <a href="https://t.me/share/url?url={{ video_url|urlencode }}&text={{ title|urlencode }}" 
+                               target="_blank" class="share-btn telegram">
+                                <i class="fab fa-telegram-plane"></i>
+                            </a>
+                            
+                            <!-- Reddit -->
+                            <a href="https://www.reddit.com/submit?url={{ video_url|urlencode }}&title={{ title|urlencode }}" 
+                               target="_blank" class="share-btn reddit">
+                                <i class="fab fa-reddit-alien"></i>
+                            </a>
+                            
+                            <!-- Download -->
+                            <a href="/video/{{ video.path }}?download=true" class="btn btn-sm btn-secondary mt-2">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    Nenhum vídeo gerado ainda. Use o formulário acima para gerar seu primeiro vídeo!
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para lidar com a seleção de subreddits do dropdown -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pega todas as opções de subreddit
+            const subredditOptions = document.querySelectorAll('.subreddit-option');
+            const subredditInput = document.getElementById('subreddit');
+            
+            // Adiciona evento de clique para cada opção
+            subredditOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const subredditName = this.textContent.trim();
+                    
+                    // Verifica se o input já tem algum valor
+                    const currentValue = subredditInput.value.trim();
+                    
+                    if (currentValue) {
+                        // Verifica se o subreddit já está na lista
+                        const subreddits = currentValue.split(',').map(s => s.trim());
+                        
+                        if (!subreddits.includes(subredditName)) {
+                            // Adiciona o novo subreddit à lista
+                            subredditInput.value = currentValue + ', ' + subredditName;
+                        }
+                    } else {
+                        // Se o input estiver vazio, apenas adiciona o subreddit
+                        subredditInput.value = subredditName;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

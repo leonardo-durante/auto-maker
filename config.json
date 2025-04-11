@@ -1,0 +1,9 @@
+{
+    "subreddits": ["memes", "dankmemes", "wholesomememes"],
+    "posts_limit": 10,
+    "image_duration": 3,
+    "run_interval_minutes": 60,
+    "fps": 30,
+    "add_music": true,
+    "feed_types": ["hot", "new", "top", "rising"]
+}
