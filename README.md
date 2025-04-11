@@ -1,4 +1,4 @@
-# Documentação do Gerador de Vídeos de Memes do Reddit
+# Documentação do Gerador de Vídeos do Reddit
 
 ## Índice
 
